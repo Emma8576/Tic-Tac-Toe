@@ -1,0 +1,5 @@
+#lang racket
+(requiere racket/gui/base)
+
+;Ventana de Inicio y Bienvenida
+
