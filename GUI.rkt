@@ -90,22 +90,26 @@
                        [min-height 30]  ; Altura fija para la caja de texto
                        [font (make-object font% 14.0 'system)])) ; Tamaño del texto
 
+;Despliega mensajes de alerta en caso de exceder numero de filas o columnas
+; Función que se llama cuando se presiona el botón
 (define (llamadaBoton button event)
-  (let ((numColumnas (send entradaColumnas get-value))
-        (numFilas (send entradaFilas get-value)))
-    
+  (let ((numColumnas (string->number (send entradaColumnas get-value)))
+        (numFilas (string->number (send entradaFilas get-value))))
     (cond
-      [(> (string->number numColumnas) 10)
+      [(> numColumnas 10)
        (new message%
             [parent box5]
             [label "No se puede crear un tablero de más de 10 columnas"]
             [font (make-object font% 14.0 'system)])]
       
-      [(> (string->number numFilas) 10)
+      [(> numFilas 10)
        (new message%
             [parent box5]
             [label "No se puede crear un tablero de más de 10 filas"]
-            [font (make-object font% 14.0 'system)])])))
+            [font (make-object font% 14.0 'system)])]
+      
+      [else 
+       (Cuadricula numFilas numColumnas 1 1)])))
       
 
 ;"""""""""""""""""""""""""""""""""""Botón para validar datos ingresados""""""""""""""""""""""
@@ -118,8 +122,38 @@
     [callback llamadaBoton])
     
 
-; Centrar la ventana
+; Centrar la ventana1
 (send Ventana1 center)
 
 ; Mostrar la ventana
 (send Ventana1 show #t)
+
+;""""""""""""""""""""""""""""""""""""""""""""""Fin Ventana1"""""""""""""""""""""""""""""""""""""""
+
+;""""""""""""""""""""""""""""""""""""""""""""""Inicio Ventana2"""""""""""""""""""""""""""""""""""""""
+(define Ventana2 (new frame%
+                      [label "Tic Tac Toe"]
+                      [width 700]
+                      [height 700]))
+
+
+;Función para trabajar la cuadricula del tablero
+(define (Cuadricula Fila Columna auxFila auxColumna)
+  ; Centrar la ventana
+  (send Ventana2 center)
+  (send Ventana2 show #t)
+  ; Mostramos un mensaje en la ventana con el tamaño de la cuadrícula
+  (define message (string-append "La cuadrícula debe ser de: "
+                                 (number->string Fila)
+                                 " filas y "
+                                 (number->string Columna)
+                                 " columnas."))
+  (new message% [parent Ventana2]
+                [label message])
+  ;Seguir aquí con la cuadricula
+  )
+
+
+
+
+
