@@ -136,24 +136,56 @@
                       [width 700]
                       [height 700]))
 
+; Lista de listas para almacenar los botones
+(define botones-lista '())
 
-;Función para trabajar la cuadricula del tablero
+; Función para crear la cuadrícula
 (define (Cuadricula Fila Columna auxFila auxColumna)
-  ; Centrar la ventana
-  (send Ventana2 center)
-  (send Ventana2 show #t)
-  ; Mostramos un mensaje en la ventana con el tamaño de la cuadrícula
-  (define message (string-append "La cuadrícula debe ser de: "
-                                 (number->string Fila)
-                                 " filas y "
-                                 (number->string Columna)
-                                 " columnas."))
-  (new message% [parent Ventana2]
-                [label message])
-  ;Seguir aquí con la cuadricula
-  )
+  ; Definir el tamaño de cada botón
+  (define button-size 60)
 
+  ; Calcular el tamaño de la ventana en función del número de filas y columnas
+  (define window-width (* Columna button-size))
+  (define window-height (* Fila button-size))
 
+  ; Ajustar el tamaño de la ventana 2
+  (send Ventana2 resize window-width window-height)
+  (send Ventana2 show #t)  ; Mostrar la ventana 2
+  (send Ventana2 center)   ; Centrar la ventana
+  (send Ventana1 show #f)  ;Ocultar ventana 1
 
+  ; Crear un panel para la cuadrícula
+  (define grid-panel
+    (new vertical-panel%
+         [parent Ventana2]
+         [alignment '(center top)]))  ; Panel que contiene filas y columnas
+   ; Crear una matriz para los botones
+  (define botones-matriz (make-vector Fila (make-vector Columna '())))
+
+  ; Función para manejar los clics en cada casilla
+  (define (click-handler btn event i j)
+    (send btn set-label "X")  ; Cambiar el texto del botón a "X"
+    (printf "Botón presionado en coordenadas: (~a, ~a)\n" i j))   ;Quitar luego
+
+; Crear la cuadrícula de botones
+  (for ([i (in-range Fila)])  ; Crear las filas
+    (define row-panel (new horizontal-panel%
+                        [parent grid-panel]))
+    (define fila-botones '())  ; Lista para almacenar los botones de esta fila
+    (for ([j (in-range Columna)])  ; Crear las columnas
+      (define btn (new button%
+           [label ""]
+           [parent row-panel]
+           [min-width button-size]  ; Tamaño de cada botón
+           [min-height button-size]
+           [font (make-object font% 25.0 'system)]
+           [callback (lambda (button event) (click-handler button event (add1 i) (add1 j)))]))  ; Asignar el manejador de clics a cada botón
+      (set! fila-botones (append fila-botones (list btn))))  ; Añadir el botón a la lista de la fila
+    (set! botones-lista (append botones-lista (list fila-botones))))  ; Añadir la fila a la lista principal
+
+ ; Imprimir la estructura de la lista de botones (para depuración) Quitar luego
+  (for ([fila botones-lista]
+        [i (in-naturals 1)])
+    (printf "Fila ~a: ~a botones\n" i (length fila))))
 
 
