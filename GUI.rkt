@@ -40,6 +40,7 @@
        [parent Ventana1]
        [alignment '(center top)]  ; Centrar en la parte de arriba
        [stretchable-height #f]))
+
 ; Crear una caja para las entradas de texto
 (define box4
   (new horizontal-panel%
@@ -90,27 +91,72 @@
                        [min-height 30]  ; Altura fija para la caja de texto
                        [font (make-object font% 14.0 'system)])) ; Tamaño del texto
 
-;Despliega mensajes de alerta en caso de exceder numero de filas o columnas
+; Definir variables globales para los mensajes de error
+(define mensaje-error-columnas #f)
+(define mensaje-error-filas #f)
+
+; Crear dos cajas separadas para los mensajes de error
+(define box-error-columnas
+  (new vertical-panel%
+       [parent Ventana1]
+       [alignment '(center top)]
+       [stretchable-height #f]))
+
+(define box-error-filas
+  (new vertical-panel%
+       [parent Ventana1]
+       [alignment '(center top)]
+       [stretchable-height #f]))
+
+; Función para actualizar o crear un mensaje de error
+(define (actualizar-mensaje-error box mensaje texto)
+  (if mensaje
+      (begin
+        (send mensaje set-label texto)
+        (send mensaje show #t))
+      (set! mensaje (new message% 
+                         [parent box] 
+                         [label texto] 
+                         [font (make-object font% 14.0 'system)])))
+  mensaje)
+
 ; Función que se llama cuando se presiona el botón
 (define (llamadaBoton button event)
   (let ((numColumnas (string->number (send entradaColumnas get-value)))
         (numFilas (string->number (send entradaFilas get-value))))
-    (cond
-      [(> numColumnas 10)
-       (new message%
-            [parent box5]
-            [label "No se puede crear un tablero de más de 10 columnas"]
-            [font (make-object font% 14.0 'system)])]
-      
-      [(> numFilas 10)
-       (new message%
-            [parent box5]
-            [label "No se puede crear un tablero de más de 10 filas"]
-            [font (make-object font% 14.0 'system)])]
-      
-      [else 
-       (Cuadricula numFilas numColumnas 1 1)])))
-      
+    
+    ; Actualizar mensaje de error para columnas
+    (set! mensaje-error-columnas
+      (cond
+        [(or (not numColumnas) (< numColumnas 3))
+         (actualizar-mensaje-error box-error-columnas mensaje-error-columnas 
+                                   "No se puede crear un tablero de menos de 3 columnas")]
+        [(> numColumnas 10)
+         (actualizar-mensaje-error box-error-columnas mensaje-error-columnas 
+                                   "No se puede crear un tablero de más de 10 columnas")]
+        [else 
+         (when mensaje-error-columnas
+           (send mensaje-error-columnas show #f))
+         #f]))
+    
+    ; Actualizar mensaje de error para filas
+    (set! mensaje-error-filas
+      (cond
+        [(or (not numFilas) (< numFilas 3))
+         (actualizar-mensaje-error box-error-filas mensaje-error-filas 
+                                   "No se puede crear un tablero de menos de 3 filas")]
+        [(> numFilas 10)
+         (actualizar-mensaje-error box-error-filas mensaje-error-filas 
+                                   "No se puede crear un tablero de más de 10 filas")]
+        [else 
+         (when mensaje-error-filas
+           (send mensaje-error-filas show #f))
+         #f]))
+    
+    ; Si no hay errores, llamar a Cuadricula
+    (when (and (not mensaje-error-columnas) (not mensaje-error-filas))
+      (displayln "Llamando a Cuadricula")
+      (Cuadricula numFilas numColumnas 1 1))))
 
 ;"""""""""""""""""""""""""""""""""""Botón para validar datos ingresados""""""""""""""""""""""
 ;Crea el botón check    
@@ -121,7 +167,6 @@
     [font (make-object font% 20.0 'system)]
     [callback llamadaBoton])
     
-
 ; Centrar la ventana1
 (send Ventana1 center)
 
@@ -187,5 +232,3 @@
   (for ([fila botones-lista]
         [i (in-naturals 1)])
     (printf "Fila ~a: ~a botones\n" i (length fila))))
-
-

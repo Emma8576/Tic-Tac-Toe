@@ -1,0 +1,142 @@
+;"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+;                                                 Tarea #2                                           ;
+;                                        Paradigmas de programación                                  ;
+;                                 Desarrollo de Juego Tic Tac Toe en Racket                          ;
+;                                              Logica del juego                                      ;
+;                                               Programadores:                                       ;
+;                                               Asly Barahona                                        ;
+;                                              Joaquín Ramirez                                       ;
+;                                              Fabián Gutierrez                                      ;
+;                                               Emmanuel Calvo                                       ;
+;"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+#lang racket
+
+; 4.2.1. Conjunto de candidatos
+(define (candidatos tablero)
+  (candidatos-aux tablero 0 0))
+
+(define (candidatos-aux tablero fila columna)
+  (cond
+    [(null? tablero) '()]
+    [(null? (car tablero)) (candidatos-aux (cdr tablero) (+ fila 1) 0)]
+    [(equal? (caar tablero) '-) (cons (list fila columna) (candidatos-aux tablero fila (+ columna 1)))]
+    [else (candidatos-aux tablero fila (+ columna 1))]))
+
+; 4.2.2. Función de selección
+(define (seleccion candidatos tablero)
+  (if (null? candidatos)
+      #f
+      (seleccion-aux candidatos tablero (car candidatos) (evaluar-posicion tablero (caar candidatos) (cadar candidatos)))))
+
+(define (seleccion-aux candidatos tablero mejor-candidato mejor-valor)
+  (if (null? candidatos)
+      mejor-candidato
+      (let* ([candidato-actual (car candidatos)]
+             [valor-actual (evaluar-posicion tablero (car candidato-actual) (cadr candidato-actual))])
+        (if (> valor-actual mejor-valor)
+            (seleccion-aux (cdr candidatos) tablero candidato-actual valor-actual)
+            (seleccion-aux (cdr candidatos) tablero mejor-candidato mejor-valor)))))
+
+; 4.2.3. Función de viabilidad
+(define (viabilidad tablero fila columna)
+  (and (>= fila 0) (< fila (length tablero))
+       (>= columna 0) (< columna (length (car tablero)))
+       (equal? (obtener-valor tablero fila columna) '-)))
+
+; 4.2.4. Función objetivo
+(define (objetivo tablero fila columna)
+  (+ (evaluar-fila tablero fila)
+     (evaluar-columna tablero columna)
+     (evaluar-diagonal-1 tablero fila columna)
+     (evaluar-diagonal-2 tablero fila columna)))
+
+; 4.2.5. Función de solución
+(define (solucion tablero)
+  (or (solucion-filas tablero)
+      (solucion-columnas tablero)
+      (solucion-diagonales tablero)))
+
+; Funciones auxiliares
+
+(define (obtener-valor tablero fila columna)
+  (list-ref (list-ref tablero fila) columna))
+
+(define (evaluar-posicion tablero fila columna)
+  (if (viabilidad tablero fila columna)
+      (objetivo tablero fila columna)
+      -1))
+
+(define (evaluar-fila tablero fila)
+  (evaluar-linea (list-ref tablero fila)))
+
+(define (evaluar-columna tablero columna)
+  (evaluar-linea (map (lambda (fila) (list-ref fila columna)) tablero)))
+
+(define (evaluar-diagonal-1 tablero fila columna)
+  (evaluar-linea (diagonal-1 tablero fila columna)))
+
+(define (evaluar-diagonal-2 tablero fila columna)
+  (evaluar-linea (diagonal-2 tablero fila columna)))
+
+(define (evaluar-linea linea)
+  (cond
+    [(equal? linea '(O O O)) 100]
+    [(equal? linea '(O O -)) 10]
+    [(equal? linea '(O - O)) 10]
+    [(equal? linea '(- O O)) 10]
+    [(equal? linea '(O - -)) 1]
+    [(equal? linea '(- O -)) 1]
+    [(equal? linea '(- - O)) 1]
+    [(equal? linea '(X X X)) -100]
+    [(equal? linea '(X X -)) -10]
+    [(equal? linea '(X - X)) -10]
+    [(equal? linea '(- X X)) -10]
+    [(equal? linea '(X - -)) -1]
+    [(equal? linea '(- X -)) -1]
+    [(equal? linea '(- - X)) -1]
+    [else 0]))
+
+(define (diagonal-1 tablero fila columna)
+  (diagonal-1-aux tablero fila columna (min fila columna)))
+
+(define (diagonal-1-aux tablero fila columna offset)
+  (if (or (= fila offset) (= columna offset))
+      (list (obtener-valor tablero (- fila offset) (- columna offset)))
+      (cons (obtener-valor tablero (- fila offset) (- columna offset))
+            (diagonal-1-aux tablero fila columna (+ offset 1)))))
+
+(define (diagonal-2 tablero fila columna)
+  (diagonal-2-aux tablero fila columna (min fila (- (length (car tablero)) columna 1))))
+
+(define (diagonal-2-aux tablero fila columna offset)
+  (if (or (= fila offset) (= (+ columna offset) (length (car tablero))))
+      (list (obtener-valor tablero (- fila offset) (+ columna offset)))
+      (cons (obtener-valor tablero (- fila offset) (+ columna offset))
+            (diagonal-2-aux tablero fila columna (+ offset 1)))))
+
+(define (solucion-filas tablero)
+  (solucion-filas-aux tablero 0))
+
+(define (solucion-filas-aux tablero fila)
+  (if (= fila (length tablero))
+      #f
+      (or (solucion-linea (list-ref tablero fila))
+          (solucion-filas-aux tablero (+ fila 1)))))
+
+(define (solucion-columnas tablero)
+  (solucion-columnas-aux tablero 0))
+
+(define (solucion-columnas-aux tablero columna)
+  (if (= columna (length (car tablero)))
+      #f
+      (or (solucion-linea (map (lambda (fila) (list-ref fila columna)) tablero))
+          (solucion-columnas-aux tablero (+ columna 1)))))
+
+(define (solucion-diagonales tablero)
+  (or (solucion-linea (diagonal-1 tablero 0 0))
+      (solucion-linea (diagonal-2 tablero 0 (- (length (car tablero)) 1)))))
+
+(define (solucion-linea linea)
+  (or (equal? linea '(X X X))
+      (equal? linea '(O O O))))
+
