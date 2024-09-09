@@ -12,6 +12,9 @@
 
 #lang racket
 
+(provide (all-defined-out))
+
+
 ; Genera una matriz para el juego
 (define (genMat filas cols)
   (cond

@@ -10,6 +10,8 @@
 ;"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 #lang racket/gui
 (require racket/gui/base)
+(require "Logica.rkt")
+
 
 ; Crear la ventana de inicio y bienvenida
 (define Ventana1
@@ -184,6 +186,10 @@
 ; Lista de listas para almacenar los botones
 (define botones-lista '())
 
+; Variables globales
+(define Matrix '())
+(define Enable #t)
+
 ; Función para crear la cuadrícula
 (define (Cuadricula Fila Columna auxFila auxColumna)
   ; Definir el tamaño de cada botón
@@ -204,31 +210,77 @@
     (new vertical-panel%
          [parent Ventana2]
          [alignment '(center top)]))  ; Panel que contiene filas y columnas
-   ; Crear una matriz para los botones
-  (define botones-matriz (make-vector Fila (make-vector Columna '())))
 
-  ; Función para manejar los clics en cada casilla
-  (define (click-handler btn event i j)
-    (send btn set-label "X")  ; Cambiar el texto del botón a "X"
-    (printf "Botón presionado en coordenadas: (~a, ~a)\n" i j))   ;Quitar luego
-
-; Crear la cuadrícula de botones
+  ; Crear la cuadrícula de botones
   (for ([i (in-range Fila)])  ; Crear las filas
     (define row-panel (new horizontal-panel%
-                        [parent grid-panel]))
+                           [parent grid-panel]))
     (define fila-botones '())  ; Lista para almacenar los botones de esta fila
     (for ([j (in-range Columna)])  ; Crear las columnas
       (define btn (new button%
-           [label ""]
-           [parent row-panel]
-           [min-width button-size]  ; Tamaño de cada botón
-           [min-height button-size]
-           [font (make-object font% 25.0 'system)]
-           [callback (lambda (button event) (click-handler button event (add1 i) (add1 j)))]))  ; Asignar el manejador de clics a cada botón
+                       [label ""]
+                       [parent row-panel]
+                       [min-width button-size]  ; Tamaño de cada botón
+                       [min-height button-size]
+                       [font (make-object font% 25.0 'system)]
+                       [callback (lambda (button event) (click-handler button event (add1 i) (add1 j)))]))  ; Asignar el manejador de clics a cada botón
       (set! fila-botones (append fila-botones (list btn))))  ; Añadir el botón a la lista de la fila
     (set! botones-lista (append botones-lista (list fila-botones))))  ; Añadir la fila a la lista principal
 
- ; Imprimir la estructura de la lista de botones (para depuración) Quitar luego
+  ; Imprimir la estructura de la lista de botones (para depuración) Quitar luego
   (for ([fila botones-lista]
         [i (in-naturals 1)])
-    (printf "Fila ~a: ~a botones\n" i (length fila))))
+    (printf "Fila ~a: ~a botones\n" i (length fila)))
+
+  ; Inicializar la matriz del juego
+  (set! Matrix (genMat Fila Columna)))
+
+; Función para manejar los clics en cada casilla
+(define (click-handler btn event i j)
+  (when Enable
+    (cond
+      ((equal? (getEnMat i j Matrix) '-)
+       (send btn set-label "X")
+       (set! Matrix (setEnMat i j 'O Matrix))
+       (cond
+         ((solucion 'O Matrix)
+          (display-victory "Player wins"))
+         ((equal? (car Matrix) "No movements left to win")
+          (display-tie))
+         (else
+          (set! Enable #f)
+          (sleep/yield 0.5)
+          (machine-turn))))
+      (else (display "Posición ocupada")))))
+
+(define (machine-turn)
+  (set! Matrix (ponerToken 'O 'X Matrix))
+  (update-gui-after-machine-move)
+  (cond
+    ((solucion 'X Matrix)
+     (display-defeat "Computer wins"))
+    ((equal? (car Matrix) "No movements left to win")
+     (display-tie))
+    (else
+     (set! Enable #t))))
+
+(define (update-gui-after-machine-move)
+  (for ([i (in-range (length Matrix))]
+        [row-buttons botones-lista])
+    (for ([j (in-range (length (car Matrix)))]
+          [btn row-buttons])
+      (when (equal? (getEnMat (add1 i) (add1 j) Matrix) 'X)
+        (send btn set-label "O")))))
+
+; Funciones para mostrar el resultado del juego (debes implementarlas)
+(define (display-victory message)
+  (displayln message))
+
+(define (display-defeat message)
+  (displayln message))
+
+(define (display-tie)
+  (displayln "It's a tie!"))
+
+; Iniciar el juego
+(send Ventana1 show #t)
