@@ -235,31 +235,30 @@
   ; Inicializar la matriz del juego
   (set! Matrix (genMat Fila Columna)))
 
-; Función para manejar los clics en cada casilla
 (define (click-handler btn event i j)
   (when Enable
     (cond
       ((equal? (getEnMat i j Matrix) '-)
        (send btn set-label "X")
-       (set! Matrix (setEnMat i j 'O Matrix))
+       (set! Matrix (setEnMat i j 'X Matrix))  ; Cambiado a 'X
        (cond
-         ((solucion 'O Matrix)
-          (display-victory "Player wins"))
-         ((equal? (car Matrix) "No movements left to win")
+         ((solucion 'X Matrix)  ; Verificar victoria para 'X'
+          (display-victory "Jugador gana"))
+         ((equal? (car Matrix) "No quedan movimientos")
           (display-tie))
          (else
           (set! Enable #f)
           (sleep/yield 0.5)
           (machine-turn))))
-      (else (display "Posición ocupada")))))
+      (else (display "Posición ocupada ")))))
 
 (define (machine-turn)
-  (set! Matrix (ponerToken 'O 'X Matrix))
+  (set! Matrix (ponerToken 'X 'O Matrix))  ; Cambiado el orden de 'X' y 'O'
   (update-gui-after-machine-move)
   (cond
-    ((solucion 'X Matrix)
-     (display-defeat "Computer wins"))
-    ((equal? (car Matrix) "No movements left to win")
+    ((solucion 'O Matrix)  ; Verificar victoria para 'O'
+     (display-defeat "Computadora gana"))
+    ((equal? (car Matrix) "No quedan movimientos")
      (display-tie))
     (else
      (set! Enable #t))))
@@ -269,7 +268,7 @@
         [row-buttons botones-lista])
     (for ([j (in-range (length (car Matrix)))]
           [btn row-buttons])
-      (when (equal? (getEnMat (add1 i) (add1 j) Matrix) 'X)
+      (when (equal? (getEnMat (add1 i) (add1 j) Matrix) 'O)  ; Cambiado a 'O'
         (send btn set-label "O")))))
 
 ; Funciones para mostrar el resultado del juego (debes implementarlas)
@@ -280,7 +279,7 @@
   (displayln message))
 
 (define (display-tie)
-  (displayln "It's a tie!"))
+  (displayln "Empate"))
 
 ; Iniciar el juego
 (send Ventana1 show #t)
